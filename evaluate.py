@@ -5,6 +5,8 @@ from utils.arg_parser import get_argparser
 import argparse
 import os
 
+import matplotlib.pyplot as plt
+
 import torch
 from torch.utils.data import DataLoader, DistributedSampler
 from torch.nn.parallel import DistributedDataParallel
@@ -59,6 +61,12 @@ def evaluate(args):
         ae = torch.tensor(0.0).to(device)
         se = torch.tensor(0.0).to(device)
         model.eval()
+
+        img_list = []
+        predicted_density_list = []
+        catch_index = 0
+
+
         for img, bboxes, density_map in test_loader:
             img = img.to(device)
             bboxes = bboxes.to(device)
@@ -72,6 +80,15 @@ def evaluate(args):
                 density_map.flatten(1).sum(dim=1) - out.flatten(1).sum(dim=1)
             ) ** 2).sum()
 
+            if catch_index < 10 :
+                print(out.shape)
+                img_list.append(img)
+                predicted_density_list.append(out)
+                catch_index += 1
+            
+            else :
+                break
+
         dist.all_reduce_multigpu([ae])
         dist.all_reduce_multigpu([se])
 
@@ -81,6 +98,28 @@ def evaluate(args):
                 f"MAE: {ae.item() / len(test):.2f}",
                 f"RMSE: {torch.sqrt(se / len(test)).item():.2f}",
             )
+
+
+        figs, axes = plt.subplots(5, 2, figsize=(10, 10))
+
+        # 遍歷每一行 (row)
+        for i in range(5):
+            # 左邊的子圖 (第 i 行，第 0 列) 顯示 img
+            ax_left = axes[i, 0]
+            ax_left.imshow(img_list[2*i])
+            ax_left.axis('off') # 關閉座標軸
+
+            # 右邊的子圖 (第 i 行，第 1 列) 顯示 out
+            ax_right = axes[i, 1]
+            ax_left.imshow(img_list[2*i + 1])
+            ax_right.axis('off') # 關閉座標軸
+
+        # --- 調整佈局並顯示 ---
+        plt.tight_layout() # 自動調整子圖間距，避免重疊
+        plt.show() # 顯示所有圖片       
+
+
+
 
     dist.destroy_process_group()
 
