@@ -41,11 +41,11 @@ def tiling_augmentation(img, bboxes, density_map, resize, jitter, tile_size, hfl
     img = make_tile(img, num_tiles, hflip, hflip_p, jitter)
     img = resize(img[..., :int(y_tile*y_target), :int(x_tile*x_target)])
 
-    density_map = make_tile(density_map, num_tiles, hflip, hflip_p)
-    density_map = density_map[..., :int(y_tile*y_target), :int(x_tile*x_target)]
-    original_sum = density_map.sum()
-    density_map = resize(density_map)
-    density_map = density_map / density_map.sum() * original_sum
+    # density_map = make_tile(density_map, num_tiles, hflip, hflip_p)
+    # density_map = density_map[..., :int(y_tile*y_target), :int(x_tile*x_target)]
+    # original_sum = density_map.sum()
+    # density_map = resize(density_map)
+    # density_map = density_map / density_map.sum() * original_sum
 
     if hflip[0, 0] < hflip_p:
         bboxes[:, [0, 2]] = x_target - bboxes[:, [2, 0]]  # TODO change
@@ -103,16 +103,18 @@ class FSC147Dataset(Dataset):
         )[:3, [0, 2], :].reshape(-1, 4)[:self.num_objects, ...]
         bboxes = bboxes / torch.tensor([w, h, w, h]) * self.img_size
 
-        density_map = torch.from_numpy(np.load(os.path.join(
-            self.data_path,
-            'gt_density_map_adaptive_512_512_object_VarV2',
-            os.path.splitext(self.image_names[idx])[0] + '.npy',
-        ))).unsqueeze(0)
+        # density_map = torch.from_numpy(np.load(os.path.join(
+        #     self.data_path,
+        #     'gt_density_map_adaptive_512_512_object_VarV2',
+        #     os.path.splitext(self.image_names[idx])[0] + '.npy',
+        # ))).unsqueeze(0)
 
-        if self.img_size != 512:
-            original_sum = density_map.sum()
-            density_map = self.resize(density_map)
-            density_map = density_map / density_map.sum() * original_sum
+        density_map = torch.randn(2,3,4)
+
+        # if self.img_size != 512:
+        #     original_sum = density_map.sum()
+        #     density_map = self.resize(density_map)
+        #     density_map = density_map / density_map.sum() * original_sum
 
         # data augmentation
         tiled = False
@@ -131,7 +133,7 @@ class FSC147Dataset(Dataset):
 
         if self.split == 'train' and not tiled and torch.rand(1) < self.horizontal_flip_p:
             img = TVF.hflip(img)
-            density_map = TVF.hflip(density_map)
+            # density_map = TVF.hflip(density_map)
             bboxes[:, [0, 2]] = self.img_size - bboxes[:, [2, 0]]
 
         return img, bboxes, density_map

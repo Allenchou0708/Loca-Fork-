@@ -70,15 +70,15 @@ def evaluate(args):
         for img, bboxes, density_map in test_loader:
             img = img.to(device)
             bboxes = bboxes.to(device)
-            density_map = density_map.to(device)
+            # density_map = density_map.to(device)
 
             out, _ = model(img, bboxes)
-            ae += torch.abs(
-                density_map.flatten(1).sum(dim=1) - out.flatten(1).sum(dim=1)
-            ).sum()
-            se += ((
-                density_map.flatten(1).sum(dim=1) - out.flatten(1).sum(dim=1)
-            ) ** 2).sum()
+            # ae += torch.abs(
+            #     density_map.flatten(1).sum(dim=1) - out.flatten(1).sum(dim=1)
+            # ).sum()
+            # se += ((
+            #     density_map.flatten(1).sum(dim=1) - out.flatten(1).sum(dim=1)
+            # ) ** 2).sum()
 
             if catch_index < 10 :
                 catch_image = img[0,:,:,:].to("cpu")
@@ -94,12 +94,12 @@ def evaluate(args):
         dist.all_reduce_multigpu([ae])
         dist.all_reduce_multigpu([se])
 
-        if rank == 0:
-            print(
-                f"{split.capitalize()} set",
-                f"MAE: {ae.item() / len(test):.2f}",
-                f"RMSE: {torch.sqrt(se / len(test)).item():.2f}",
-            )
+        # if rank == 0:
+        #     print(
+        #         f"{split.capitalize()} set",
+        #         f"MAE: {ae.item() / len(test):.2f}",
+        #         f"RMSE: {torch.sqrt(se / len(test)).item():.2f}",
+        #     )
 
 
         figs, axes = plt.subplots(5, 2, figsize=(10, 10))
