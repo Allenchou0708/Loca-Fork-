@@ -81,9 +81,11 @@ def evaluate(args):
             ) ** 2).sum()
 
             if catch_index < 10 :
-                print(out.shape)
-                img_list.append(img)
-                predicted_density_list.append(out)
+                catch_image = img[0,:,:,:].to("cpu")
+                img_list.append(catch_image.permutation(1,2,0))
+                catch_density_map =  out[0,:,:,:].to("cpu")
+                predicted_density_list.append(catch_density_map.permutation(1,2,0))
+                print(img[0,:,:,:].shape)
                 catch_index += 1
             
             else :
